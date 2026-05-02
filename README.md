@@ -1,45 +1,74 @@
-# Proforma Invoice Generator
+# Smart Customer Invoice Generator
 
-A complete solution to capture customer data via a shareable link, sync it to Google Sheets, and automatically generate a professional Proforma Invoice PDF with an embedded E-Signature.
+A complete solution for creating shareable link-based customer invoice forms, integrating with Google Sheets for tracking, and automatically generating Proforma Invoices with digital signatures in PDF format. Built with Flutter and Supabase.
 
 ## Features
-- **Smart Customer Form**: Shareable link to capture customer details, products, and terms.
-- **Proforma Invoice PDF Generation**: Auto-generates a downloadable PDF using `pdf` and `printing` packages.
-- **E-Signature Support**: Upload a signature in settings, which is automatically placed on every generated invoice.
-- **Google Sheets Sync**: Submissions trigger a Supabase Edge Function that pushes the data to a configured Google Apps Script Webhook for real-time synchronization.
-- **Dashboard**: View all past invoices and check their sync status.
-- **Settings Panel**: Easily manage your Google Sheets Webhook URL and authorized signatory image.
+
+- **Link-Based Customer Form**: Generate a shareable link that your customers can use to submit their invoice details.
+- **Proforma Invoice Generator**: Automatically constructs a highly professional Proforma Invoice in PDF format upon form submission.
+- **E-Signature Support**: Allows the business owner to upload an e-signature in the Dashboard, which gets seamlessly embedded into all generated PDFs.
+- **Google Sheets Integration**: Utilizes Supabase Edge Functions to call an Apps Script webhook and append form submissions to a Google Sheet automatically.
+- **Dashboard Settings**: A centralized location for managing your webhook configuration, updating the e-signature, and grabbing the form link to share.
 
 ## Tech Stack
-- **Frontend**: Flutter (Web, iOS, Android, macOS, Windows, Linux)
-- **Routing**: GoRouter
-- **Database & Auth**: Supabase
-- **Functions**: Supabase Edge Functions (Deno)
-- **PDF Generation**: `pdf`, `printing`
+
+- **Framework**: Flutter (Web, iOS, Android, macOS, Windows, Linux)
+- **Database & Backend**: Supabase (PostgreSQL, Storage, Edge Functions)
+- **PDF Generation**: `pdf` and `printing` packages
+- **Routing**: `go_router` for seamless web and app navigation
+- **File Management**: `file_picker` for signature uploads
 
 ## Setup Instructions
 
-1. **Connect Supabase Project**: Ensure a Supabase project is linked via CouldAI.
-2. **Deploy Database Schema**: The initial migrations will automatically configure the `invoices` and `settings` tables, along with a `signatures` storage bucket.
-3. **Deploy Edge Function**: The `sync_to_sheets` edge function handles pushing data to your webhook.
-4. **Google Sheets Webhook**:
-    - Create a new Google Sheet.
-    - Go to Extensions > Apps Script.
-    - Add a `doPost(e)` function to parse the incoming JSON payload and append a row to the active sheet.
-    - Deploy as a Web App (access: "Anyone").
-    - Copy the Web App URL and paste it into the app's Settings screen.
-5. **Run the App**:
+1. **Connect Supabase**: Ensure you have linked your Supabase project using the built-in configuration. The application runs migrations upon successful setup to create `invoices` and `settings` tables, as well as the `signatures` storage bucket.
+2. **Deploy the Edge Function**: A Supabase Edge Function (`sync_to_sheets`) is provided to hit the Apps Script webhook. 
+3. **Run the App**: 
    ```bash
+   flutter pub get
    flutter run -d chrome
    ```
 
+## Google Sheets Integration Setup
+
+To fully test Google Sheets synchronization:
+1. Create a new Google Sheet.
+2. Go to **Extensions > Apps Script** and insert the following code:
+```javascript
+function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var data = JSON.parse(e.postData.contents);
+  
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(["ID", "Customer", "Company", "Address", "Contact", "Email", "Product", "Qty", "Price", "Total", "Created At"]);
+  }
+  
+  sheet.appendRow([
+    data.id,
+    data.customer_name,
+    data.company_name,
+    data.address,
+    data.contact_number,
+    data.email,
+    data.product_details,
+    data.quantity,
+    data.price,
+    data.total_amount,
+    data.created_at
+  ]);
+  
+  return ContentService.createTextOutput(JSON.stringify({"status": "success"})).setMimeType(ContentService.MimeType.JSON);
+}
+```
+3. Deploy the Apps Script as a **Web App**, granting access to "Anyone".
+4. Copy the Web App URL, navigate to your app's **Dashboard**, paste the URL into the **Google Sheets Webhook URL** field, and save it.
+
 ## User Flows
 
-1. **Submit Invoice Request**: Users land on the form screen (`/`), fill in their details, and submit.
-2. **PDF Preview**: Upon submission, they are navigated to the success screen (`/success`) where a dynamic PDF is rendered. They can download or print it.
-3. **Admin Dashboard**: Accessible via the dashboard icon (`/dashboard`), admins can view all submissions and see whether they synced successfully to Google Sheets.
+- **Business Owner**: Navigates to the root path (`/`) to access the Dashboard. Sets the Google Sheets Webhook URL and uploads a transparent PNG of their signature. Copies the customer form link.
+- **Customer**: Opens the shared link (`/#/form`). Fills out their product requirement, company details, and contact info. Upon hitting submit, their info goes to Supabase, syncs to Google Sheets, and a completed Proforma Invoice PDF is automatically downloaded containing the owner's digital signature.
 
 ---
 
 ## About CouldAI
-This application was generated with [CouldAI](https://could.ai), an AI app builder for cross-platform apps that turns prompts into real native iOS, Android, Web, and Desktop apps with autonomous AI agents that architect, build, test, deploy, and iterate production-ready applications.
+
+This app was generated with [CouldAI](https://could.ai), an AI app builder for cross-platform apps that turns prompts into real native iOS, Android, Web, and Desktop apps with autonomous AI agents that architect, build, test, deploy, and iterate production-ready applications.

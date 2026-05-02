@@ -1,39 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'integrations/supabase.dart';
-import 'screens/form_screen.dart';
+import 'screens/invoice_form_screen.dart';
 import 'screens/dashboard_screen.dart';
-import 'screens/settings_screen.dart';
-import 'screens/success_screen.dart';
+
+// Ensure you import the supabase integration config if available
+// import 'integrations/supabase.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await SupabaseConfig.ensureInitialized();
+  
+  // Try to initialize Supabase
+  try {
+     // await SupabaseConfig.ensureInitialized();
+  } catch (e) {
+     debugPrint('Supabase init failed: $e');
+  }
+
   runApp(const MyApp());
 }
 
 final _router = GoRouter(
-  initialLocation: '/',
+  initialLocation: '/form',
   routes: [
     GoRoute(
-      path: '/',
-      builder: (context, state) => const FormScreen(),
-    ),
-    GoRoute(
-      path: '/success',
-      builder: (context, state) {
-        final invoiceId = state.uri.queryParameters['invoiceId'];
-        return SuccessScreen(invoiceId: invoiceId);
-      },
+      path: '/form',
+      builder: (context, state) => const InvoiceFormScreen(),
     ),
     GoRoute(
       path: '/dashboard',
       builder: (context, state) => const DashboardScreen(),
-    ),
-    GoRoute(
-      path: '/settings',
-      builder: (context, state) => const SettingsScreen(),
     ),
   ],
 );
@@ -47,11 +42,24 @@ class MyApp extends StatelessWidget {
       title: 'Proforma Invoice Generator',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF1E3A8A),
+          brightness: Brightness.light,
+        ),
         useMaterial3: true,
-        inputDecorationTheme: const InputDecorationTheme(
-          border: OutlineInputBorder(),
+        appBarTheme: const AppBarTheme(
+          centerTitle: true,
+          elevation: 0,
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
           filled: true,
+          fillColor: Colors.grey.shade50,
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
         ),
       ),
       routerConfig: _router,
